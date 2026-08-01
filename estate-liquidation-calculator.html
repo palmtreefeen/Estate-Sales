@@ -369,6 +369,117 @@
             font-size: 0.9em;
         }
 
+        .partners-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .partner-input-group {
+            display: grid;
+            grid-template-columns: 1fr 80px 50px auto;
+            gap: 10px;
+            margin-bottom: 12px;
+            align-items: end;
+        }
+
+        .partner-input-group input {
+            padding: 10px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+        }
+
+        .partner-input-group button {
+            padding: 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .partner-input-group button:hover {
+            background: #c82333;
+        }
+
+        .add-partner-btn {
+            padding: 10px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .add-partner-btn:hover {
+            background: #764ba2;
+        }
+
+        .partners-list {
+            margin-top: 20px;
+        }
+
+        .partner-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .partner-card.you {
+            border-left-color: #28a745;
+        }
+
+        .partner-card.you .partner-name {
+            color: #28a745;
+        }
+
+        .partner-card.jacob {
+            border-left-color: #ffc107;
+        }
+
+        .partner-card.jacob .partner-name {
+            color: #ffc107;
+        }
+
+        .partner-name {
+            font-weight: 600;
+            font-size: 1.05em;
+            color: #667eea;
+        }
+
+        .partner-details {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .partner-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .partner-stat-label {
+            font-size: 0.85em;
+            color: #999;
+            margin-bottom: 3px;
+        }
+
+        .partner-stat-value {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #28a745;
+        }
+
         @media print {
             body {
                 background: white;
@@ -414,6 +525,23 @@
                 </div>
             </div>
 
+            <div class="card">
+                <h2>👥 Partners & Revenue Splits</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">Build your team by adding partners. Each person gets a percentage of the net revenue after expenses.</p>
+
+                <div class="partners-section">
+                    <h4 style="color: #667eea; margin-bottom: 15px;">Add or Manage Partners</h4>
+
+                    <div style="display: grid; grid-template-columns: 1fr 80px auto; gap: 10px; margin-bottom: 12px;">
+                        <input type="text" id="newPartnerName" placeholder="Partner name (e.g., 'Lydia', 'Friend')" style="padding: 10px; border: 2px solid #667eea; border-radius: 5px;">
+                        <input type="number" id="newPartnerPercent" placeholder="%" min="0" max="100" value="10" style="padding: 10px; border: 2px solid #667eea; border-radius: 5px;">
+                        <button class="add-partner-btn" onclick="addPartner()">+ Add Partner</button>
+                    </div>
+
+                    <div class="partners-list" id="partnersList"></div>
+                </div>
+            </div>
+
             <div class="calculator-grid">
                 <!-- LEFT COLUMN: INPUTS -->
                 <div>
@@ -445,7 +573,7 @@
                         </div>
 
                         <div class="calc-section" style="margin-top: 20px;">
-                            <h3>Cut Percentages</h3>
+                            <h3>Gross Revenue Cuts</h3>
 
                             <div class="input-group">
                                 <label>Jacob's Cut (% of gross)</label>
@@ -457,19 +585,15 @@
                                 </div>
                             </div>
 
-                            <div class="input-group">
-                                <label>Your Cut (% of net)</label>
-                                <div class="input-wrapper percentage-control">
-                                    <button class="percent-btn" onclick="adjustPercent('your', -1)">−</button>
-                                    <input type="number" id="yourPercent" value="50" min="0" max="100" oninput="calculate()">
-                                    <span class="input-unit">%</span>
-                                    <button class="percent-btn" onclick="adjustPercent('your', 1)">+</button>
-                                </div>
+                            <div class="info-box">
+                                💡 Jacob's cut comes directly from gross revenue before net is split
                             </div>
+                        </div>
 
-                            <div class="warning-box">
-                                ⚠️ Carlos gets the remainder. Example: 50% to you = 50% to Carlos
-                            </div>
+                        <div class="calc-section" style="margin-top: 20px;">
+                            <h3>Net Revenue Splits</h3>
+                            <p style="font-size: 0.9em; color: #666; margin-bottom: 12px;">After Jacob's cut and expenses, the remaining net is split among your partners:</p>
+                            <div id="netSplitsDisplay"></div>
                         </div>
                     </div>
                 </div>
@@ -659,33 +783,150 @@
 
     <script>
         let snapshots = JSON.parse(localStorage.getItem('estateSnapshots')) || [];
+        let partners = JSON.parse(localStorage.getItem('estatePartners')) || [
+            { id: 1, name: 'You (Elizabeth)', percent: 50, locked: true },
+            { id: 2, name: 'Carlos', percent: 50, locked: true }
+        ];
+
+        function addPartner() {
+            const name = document.getElementById('newPartnerName').value.trim();
+            const percent = parseFloat(document.getElementById('newPartnerPercent').value) || 0;
+
+            if (!name) {
+                alert('Please enter a partner name');
+                return;
+            }
+
+            const totalPercent = partners.reduce((sum, p) => sum + p.percent, 0);
+            if (totalPercent + percent > 100) {
+                alert(`Total would exceed 100%. Current total: ${totalPercent}%, new addition: ${percent}%`);
+                return;
+            }
+
+            const newPartner = {
+                id: Date.now(),
+                name: name,
+                percent: percent,
+                locked: false
+            };
+
+            partners.push(newPartner);
+            savePartners();
+            renderPartners();
+            calculate();
+
+            document.getElementById('newPartnerName').value = '';
+            document.getElementById('newPartnerPercent').value = 10;
+        }
+
+        function updatePartnerPercent(id, newPercent) {
+            const partner = partners.find(p => p.id === id);
+            if (!partner) return;
+
+            newPercent = Math.max(0, Math.min(100, newPercent));
+
+            const otherTotal = partners.filter(p => p.id !== id).reduce((sum, p) => sum + p.percent, 0);
+            if (otherTotal + newPercent > 100) {
+                alert(`Total would exceed 100%. Limit: ${100 - otherTotal}%`);
+                return;
+            }
+
+            partner.percent = newPercent;
+            savePartners();
+            renderPartners();
+            calculate();
+        }
+
+        function deletePartner(id) {
+            const partner = partners.find(p => p.id === id);
+            if (partner && partner.locked) {
+                alert("Can't delete " + partner.name + " - they're core to the business!");
+                return;
+            }
+
+            if (confirm('Remove ' + partner.name + '?')) {
+                partners = partners.filter(p => p.id !== id);
+                savePartners();
+                renderPartners();
+                calculate();
+            }
+        }
+
+        function savePartners() {
+            localStorage.setItem('estatePartners', JSON.stringify(partners));
+        }
+
+        function renderPartners() {
+            const list = document.getElementById('partnersList');
+            const netsplits = document.getElementById('netSplitsDisplay');
+
+            // Render partner management cards
+            list.innerHTML = partners.map((p, i) => `
+                <div class="partner-card ${p.locked ? (i === 0 ? 'you' : 'jacob') : ''}">
+                    <div>
+                        <div class="partner-name">${p.name}</div>
+                        <div style="font-size: 0.85em; color: #999;">${p.locked ? '(Core partner)' : ''}</div>
+                    </div>
+                    <div class="partner-details">
+                        <div class="partner-stat">
+                            <span class="partner-stat-label">% of Net</span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button class="percent-btn" style="width: 28px; height: 28px; padding: 0; font-size: 0.9em;" onclick="updatePartnerPercent(${p.id}, ${p.percent - 1})">−</button>
+                                <span class="partner-stat-value" style="min-width: 30px; text-align: center;">${p.percent}%</span>
+                                <button class="percent-btn" style="width: 28px; height: 28px; padding: 0; font-size: 0.9em;" onclick="updatePartnerPercent(${p.id}, ${p.percent + 1})">+</button>
+                            </div>
+                        </div>
+                        ${!p.locked ? `<button onclick="deletePartner(${p.id})" style="padding: 6px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Remove</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            // Render net revenue splits display
+            const totalPercent = partners.reduce((sum, p) => sum + p.percent, 0);
+            if (totalPercent !== 100) {
+                netsplits.innerHTML = `<div class="warning-box">⚠️ Partner percentages total ${totalPercent}%. They should add up to 100%.</div>`;
+            } else {
+                netsplits.innerHTML = partners.map(p => `
+                    <div class="stat" style="display: flex; justify-content: space-between; padding: 10px; background: #f8f9fa; border-radius: 4px; margin-bottom: 8px;">
+                        <span style="color: #666;">${p.name}</span>
+                        <span style="font-weight: bold; color: #667eea;">${p.percent}% of net</span>
+                    </div>
+                `).join('');
+            }
+        }
 
         function calculate() {
             const gross = parseFloat(document.getElementById('grossRevenue').value) || 0;
             const expenses = parseFloat(document.getElementById('expenses').value) || 0;
             const jacobPercent = parseFloat(document.getElementById('jacobPercent').value) || 0;
-            const yourPercent = parseFloat(document.getElementById('yourPercent').value) || 0;
 
             // Calculations
             const jacobCut = gross * (jacobPercent / 100);
             const netAfterJacob = gross - jacobCut - expenses;
-            const yourShare = netAfterJacob * (yourPercent / 100);
-            const carlosShare = netAfterJacob * ((100 - yourPercent) / 100);
 
-            // Update display
+            // Update display for gross revenue
             document.getElementById('resultGross').textContent = '$' + gross.toLocaleString('en-US', {maximumFractionDigits: 0});
             document.getElementById('resultJacob').textContent = '−$' + jacobCut.toLocaleString('en-US', {maximumFractionDigits: 0});
             document.getElementById('resultExpenses').textContent = '−$' + expenses.toLocaleString('en-US', {maximumFractionDigits: 0});
             document.getElementById('resultNet').textContent = '$' + netAfterJacob.toLocaleString('en-US', {maximumFractionDigits: 0});
-            document.getElementById('resultYourShare').textContent = '$' + yourShare.toLocaleString('en-US', {maximumFractionDigits: 0});
-            document.getElementById('resultCarlos').textContent = '$' + carlosShare.toLocaleString('en-US', {maximumFractionDigits: 0});
 
-            // Hourly rates
-            const yourHourly = yourShare / 40;
-            const carlosHourly = carlosShare / 10;
+            // Calculate each partner's share
+            const partnerShares = {};
+            partners.forEach(p => {
+                partnerShares[p.id] = netAfterJacob * (p.percent / 100);
+            });
 
-            document.getElementById('resultYourHourly').textContent = '$' + yourHourly.toFixed(2) + '/hr';
-            document.getElementById('resultCarlosHourly').textContent = '$' + carlosHourly.toFixed(2) + '/hr';
+            // Update comparison cards for first two partners (You & Carlos)
+            if (partners.length >= 2) {
+                document.getElementById('resultYourShare').textContent = '$' + partnerShares[partners[0].id].toLocaleString('en-US', {maximumFractionDigits: 0});
+                document.getElementById('resultCarlos').textContent = '$' + partnerShares[partners[1].id].toLocaleString('en-US', {maximumFractionDigits: 0});
+
+                const yourHourly = partnerShares[partners[0].id] / 40;
+                const carlosHourly = partnerShares[partners[1].id] / 10;
+
+                document.getElementById('resultYourHourly').textContent = '$' + yourHourly.toFixed(2) + '/hr';
+                document.getElementById('resultCarlosHourly').textContent = '$' + carlosHourly.toFixed(2) + '/hr';
+            }
         }
 
         function calculateMix() {
@@ -888,6 +1129,7 @@
         }
 
         // Initialize
+        renderPartners();
         calculate();
         calculateMix();
         renderSnapshots();
