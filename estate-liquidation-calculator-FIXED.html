@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estate Liquidation Financial Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .tab-button {
+            padding: 12px 24px;
+            border: 2px solid white;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .tab-button:hover {
+            background: white;
+            color: #667eea;
+        }
+        .tab-button.active {
+            background: white;
+            color: #667eea;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .scenario-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        .scenario-btn {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .scenario-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .calc-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .calc-section h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        .input-group {
+            margin-bottom: 18px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #333;
+            font-size: 0.9em;
+        }
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .input-wrapper input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            font-size: 1em;
+            text-align: right;
+        }
+        .input-wrapper input:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .input-unit {
+            font-weight: 600;
+            color: #667eea;
+            min-width: 35px;
+        }
+        .percentage-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .percentage-control input {
+            width: 60px !important;
+            text-align: center;
+        }
+        .percent-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .percent-btn:hover {
+            background: #764ba2;
+        }
+        .results-section {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .result-item {
+            background: white;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .result-label {
+            color: #666;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        .result-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .result-value.negative {
+            color: #dc3545;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .comparison-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .comparison-card h4 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 0.95em;
+        }
+        .comparison-card .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.9em;
+            border-bottom: 1px solid #eee;
+        }
+        .comparison-card .stat:last-child {
+            border-bottom: none;
+        }
+        .stat-label {
+            color: #666;
+        }
+        .stat-value {
+            font-weight: 600;
+            color: #28a745;
+        }
+        .export-section {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .export-btn {
+            padding: 12px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .export-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        .copy-btn {
+            padding: 12px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .copy-btn:hover {
+            background: #0056b3;
+        }
+        .success-message {
+            display: none;
+            padding: 12px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .summary-table th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        .summary-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        .summary-table tr:hover {
+            background: #f8f9fa;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #0066cc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .partners-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .add-partner-btn {
+            padding: 10px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .add-partner-btn:hover {
+            background: #764ba2;
+        }
+        .partners-list {
+            margin-top: 20px;
+        }
+        .partner-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .partner-card.you {
+            border-left-color: #28a745;
+        }
+        .partner-card.you .partner-name {
+            color: #28a745;
+        }
+        .partner-name {
+            font-weight: 600;
+            font-size: 1.05em;
+            color: #667eea;
+        }
+        .partner-details {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .partner-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .partner-stat-label {
+            font-size: 0.85em;
+            color: #999;
+            margin-bottom: 3px;
+        }
+        .partner-stat-value {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #28a745;
+        }
+        @media print {
+            body {
+                background: white;
+            }
+            .nav-tabs, .export-section, .scenario-buttons {
+                display: none;
+            }
+        }
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Estate Liquidation Financial Calculator</h1>
+            <p>Run scenarios, compare deals, and export breakdowns</p>
+        </header>
+        <div class="nav-tabs">
+            <button class="tab-button active" onclick="switchTab('calculator')">🧮 Calculator</button>
+            <button class="tab-button" onclick="switchTab('scenarios')">📊 Scenario Builder</button>
+            <button class="tab-button" onclick="switchTab('snapshots')">📸 Saved Snapshots</button>
+        </div>
+        <!-- CALCULATOR TAB -->
+        <div id="calculator" class="tab-content active">
+            <div class="card">
+                <h2>🎯 Quick Scenario Presets</h2>
+                <p style="margin-bottom: 15px; color: #666;">Click a preset to auto-populate recommended numbers for that stage:</p>
+                <div class="scenario-buttons">
+                    <button class="scenario-btn" onclick="loadScenario('mvp')">🚀 MVP Launch (1 estate/mo)</button>
+                    <button class="scenario-btn" onclick="loadScenario('validation')">✅ Validation (2–3/mo)</button>
+                    <button class="scenario-btn" onclick="loadScenario('scale')">📈 Scale (3–4/mo + Tier 3)</button>
+                    <button class="scenario-btn" onclick="resetCalculator()">↺ Reset</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2>👥 Partners & Revenue Splits</h2>
+                <p style="color: #666; margin-bottom: 15px; font-size: 0.9em;">Build your team by adding partners. Each person gets a percentage of the net revenue after expenses.</p>
+                <div class="partners-section">
+                    <h4 style="color: #667eea; margin-bottom: 15px;">Add or Manage Partners</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 80px auto; gap: 10px; margin-bottom: 12px;">
+                        <input type="text" id="newPartnerName" placeholder="Partner name (e.g., 'Lydia', 'Friend')" style="padding: 10px; border: 2px solid #667eea; border-radius: 5px;">
+                        <input type="number" id="newPartnerPercent" placeholder="%" min="0" max="100" value="10" style="padding: 10px; border: 2px solid #667eea; border-radius: 5px;">
+                        <button class="add-partner-btn" onclick="addPartner()">+ Add Partner</button>
+                    </div>
+                    <div class="partners-list" id="partnersList"></div>
+                </div>
+            </div>
+            <div class="calculator-grid">
+                <!-- LEFT COLUMN: INPUTS -->
+                <div>
+                    <div class="card">
+                        <h3>📥 Deal Parameters</h3>
+                        <div class="calc-section">
+                            <h3>Estate Details</h3>
+                            <div class="input-group">
+                                <label>Gross Operator Revenue ($)</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="grossRevenue" value="6000" oninput="calculate()">
+                                    <span class="input-unit">USD</span>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Your Operating Expenses ($)</label>
+                                <div class="input-wrapper">
+                                    <input type="number" id="expenses" value="400" oninput="calculate()">
+                                    <span class="input-unit">USD</span>
+                                </div>
+                            </div>
+                            <div class="info-box">
+                                💡 Expenses include: hired help, supplies, thrift coordination, travel
+                            </div>
+                        </div>
+                        <div class="calc-section" style="margin-top: 20px;">
+                            <h3>Gross Revenue Cuts</h3>
+                            <div class="input-group">
+                                <label>Jacob's Cut (% of gross)</label>
+                                <div class="input-wrapper percentage-control">
+                                    <button class="percent-btn" onclick="adjustPercent('jacob', -1)">−</button>
+                                    <input type="number" id="jacobPercent" value="10" min="0" max="100" oninput="calculate()">
+                                    <span class="input-unit">%</span>
+                                    <button class="percent-btn" onclick="adjustPercent('jacob', 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="info-box">
+                                💡 Jacob's cut comes directly from gross revenue before net is split
+                            </div>
+                        </div>
+                        <div class="calc-section" style="margin-top: 20px;">
+                            <h3>Net Revenue Splits</h3>
+                            <p style="font-size: 0.9em; color: #666; margin-bottom: 12px;">After Jacob's cut and expenses, the remaining net is split among your partners:</p>
+                            <div id="netSplitsDisplay"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- RIGHT COLUMN: RESULTS -->
+                <div>
+                    <div class="card">
+                        <h3>📊 Your Financial Breakdown</h3>
+                        <div class="results-section">
+                            <div class="result-item">
+                                <span class="result-label">Gross Operator Revenue</span>
+                                <span class="result-value" id="resultGross">$6,000</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">− Jacob's Cut (10%)</span>
+                                <span class="result-value negative" id="resultJacob">−$600</span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">− Your Expenses</span>
+                                <span class="result-value negative" id="resultExpenses">−$400</span>
+                            </div>
+                            <div style="border-top: 2px solid #667eea; padding-top: 10px; margin-top: 10px;">
+                                <div class="result-item">
+                                    <span class="result-label" style="font-size: 1em;"><strong>Net Family Revenue</strong></span>
+                                    <span class="result-value" id="resultNet" style="font-size: 1.5em;">$5,000</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="comparison-grid" id="partnerSharesDisplay"></div>
+                        <div class="export-section">
+                            <button class="export-btn" onclick="exportPDF()">📥 Export as PDF</button>
+                            <button class="copy-btn" onclick="copyToClipboard()">📋 Copy Numbers</button>
+                        </div>
+                        <div class="success-message" id="successMsg"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- SCENARIOS TAB -->
+        <div id="scenarios" class="tab-content">
+            <div class="card">
+                <h2>📊 Year 1 Scenario Comparison</h2>
+                <p style="color: #666; margin-bottom: 20px;">See how different deal volumes and mixes affect your monthly revenue:</p>
+                <table class="summary-table">
+                    <thead>
+                        <tr>
+                            <th>Scenario</th>
+                            <th>Estates/Month</th>
+                            <th>Est. Gross Revenue</th>
+                            <th>Net After Jacob</th>
+                            <th>Your 50% Cut</th>
+                            <th>Hours/Month</th>
+                            <th>Hourly Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>MVP Launch</strong><br>(Months 1–3)</td>
+                            <td>1</td>
+                            <td>$4k–$7.5k</td>
+                            <td>$3.3k–$6.25k</td>
+                            <td>$1.65k–$3.1k</td>
+                            <td>40</td>
+                            <td>$41–$78/hr</td>
+                        </tr>
+                        <tr style="background: #e8f5e9;">
+                            <td><strong>Validation</strong><br>(Months 4–6)</td>
+                            <td>2–3</td>
+                            <td>$8k–$22.5k</td>
+                            <td>$6.6k–$18.75k</td>
+                            <td>$3.3k–$9.4k</td>
+                            <td>60–80</td>
+                            <td>$55–$157/hr</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Scale</strong><br>(Months 7–12)</td>
+                            <td>3–4 + Tier 3</td>
+                            <td>$12k–$35k</td>
+                            <td>$9.8k–$29.5k</td>
+                            <td>$4.9k–$14.8k</td>
+                            <td>80–100</td>
+                            <td>$49–$185/hr</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="success-box" style="margin-top: 20px;">
+                    💡 <strong>Key Insight:</strong> Your hourly rate improves as you get more efficient. With hired help + Lydia support, you optimize time spent while growing revenue.
+                </div>
+            </div>
+            <div class="card">
+                <h2>🎯 Deal Mix Scenarios</h2>
+                <p style="color: #666; margin-bottom: 20px;">Run your own combination of Tier 1, 2, and 3 deals:</p>
+                <div class="calculator-grid">
+                    <div class="calc-section">
+                        <h3>Deal Count</h3>
+                        <div class="input-group">
+                            <label>Tier 1 Deals (Small)</label>
+                            <input type="number" id="tier1Count" value="1" min="0" oninput="calculateMix()">
+                        </div>
+                        <div class="input-group">
+                            <label>Tier 2 Deals (Mid)</label>
+                            <input type="number" id="tier2Count" value="1" min="0" oninput="calculateMix()">
+                        </div>
+                        <div class="input-group">
+                            <label>Tier 3 Deals (High-Value)</label>
+                            <input type="number" id="tier3Count" value="0" min="0" oninput="calculateMix()">
+                        </div>
+                    </div>
+                    <div class="calc-section">
+                        <h3>Monthly Totals</h3>
+                        <div class="result-item">
+                            <span class="result-label">Est. Gross Revenue</span>
+                            <span class="result-value" id="mixGross">$7,500</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Your Net (50%)</span>
+                            <span class="result-value" id="mixYourShare">$3,375</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Estimated Hours</span>
+                            <span class="result-value" id="mixHours">70</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Hourly Rate</span>
+                            <span class="result-value" id="mixHourly">$48/hr</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- SNAPSHOTS TAB -->
+        <div id="snapshots" class="tab-content">
+            <div class="card">
+                <h2>📸 Saved Snapshots</h2>
+                <p style="color: #666; margin-bottom: 20px;">Your saved calculations appear here. Take snapshots to compare scenarios:</p>
+                <div class="export-section">
+                    <button class="export-btn" onclick="saveSnapshot()">📸 Save Current Scenario</button>
+                    <button class="copy-btn" onclick="exportAllSnapshots()">📥 Export All as PDF</button>
+                    <button style="padding: 12px 20px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;" onclick="clearSnapshots()">🗑️ Clear All</button>
+                </div>
+                <div id="snapshotsList" style="margin-top: 25px;"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let snapshots = JSON.parse(localStorage.getItem('estateSnapshots')) || [];
+        let partners = JSON.parse(localStorage.getItem('estatePartners')) || [
+            { id: 1, name: 'You (Elizabeth)', percent: 50, locked: true },
+            { id: 2, name: 'Carlos', percent: 50, locked: true }
+        ];
+        function addPartner() {
+            const name = document.getElementById('newPartnerName').value.trim();
+            const percent = parseFloat(document.getElementById('newPartnerPercent').value) || 0;
+            if (!name) {
+                alert('Please enter a partner name');
+                return;
+            }
+            const totalPercent = partners.reduce((sum, p) => sum + p.percent, 0);
+            if (totalPercent + percent > 100) {
+                alert(`Total would exceed 100%. Current total: ${totalPercent}%, new addition: ${percent}%`);
+                return;
+            }
+            const newPartner = {
+                id: Date.now(),
+                name: name,
+                percent: percent,
+                locked: false
+            };
+            partners.push(newPartner);
+            savePartners();
+            renderPartners();
+            calculate();
+            document.getElementById('newPartnerName').value = '';
+            document.getElementById('newPartnerPercent').value = 10;
+        }
+        function updatePartnerPercent(id, newPercent) {
+            const partner = partners.find(p => p.id === id);
+            if (!partner) return;
+            newPercent = Math.max(0, Math.min(100, newPercent));
+            const otherTotal = partners.filter(p => p.id !== id).reduce((sum, p) => sum + p.percent, 0);
+            if (otherTotal + newPercent > 100) {
+                alert(`Total would exceed 100%. Limit: ${100 - otherTotal}%`);
+                return;
+            }
+            partner.percent = newPercent;
+            savePartners();
+            renderPartners();
+            calculate();
+        }
+        function deletePartner(id) {
+            const partner = partners.find(p => p.id === id);
+            if (partner && partner.locked) {
+                alert("Can't delete " + partner.name + " - they're core to the business!");
+                return;
+            }
+            if (confirm('Remove ' + partner.name + '?')) {
+                partners = partners.filter(p => p.id !== id);
+                savePartners();
+                renderPartners();
+                calculate();
+            }
+        }
+        function savePartners() {
+            localStorage.setItem('estatePartners', JSON.stringify(partners));
+        }
+        function renderPartners() {
+            const list = document.getElementById('partnersList');
+            const netsplits = document.getElementById('netSplitsDisplay');
+            list.innerHTML = partners.map((p, i) => `
+                <div class="partner-card ${p.locked && i === 0 ? 'you' : ''}">
+                    <div>
+                        <div class="partner-name">${p.name}</div>
+                        <div style="font-size: 0.85em; color: #999;">${p.locked ? '(Core partner)' : ''}</div>
+                    </div>
+                    <div class="partner-details">
+                        <div class="partner-stat">
+                            <span class="partner-stat-label">% of Net</span>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <button class="percent-btn" style="width: 28px; height: 28px; padding: 0; font-size: 0.9em;" onclick="updatePartnerPercent(${p.id}, ${p.percent - 1})">−</button>
+                                <span class="partner-stat-value" style="min-width: 30px; text-align: center;">${p.percent}%</span>
+                                <button class="percent-btn" style="width: 28px; height: 28px; padding: 0; font-size: 0.9em;" onclick="updatePartnerPercent(${p.id}, ${p.percent + 1})">+</button>
+                            </div>
+                        </div>
+                        ${!p.locked ? `<button onclick="deletePartner(${p.id})" style="padding: 6px 10px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Remove</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            const totalPercent = partners.reduce((sum, p) => sum + p.percent, 0);
+            if (totalPercent !== 100) {
+                netsplits.innerHTML = `<div class="warning-box">⚠️ Partner percentages total ${totalPercent}%. They should add up to 100%.</div>`;
+            } else {
+                netsplits.innerHTML = partners.map(p => `
+                    <div class="stat" style="display: flex; justify-content: space-between; padding: 10px; background: #f8f9fa; border-radius: 4px; margin-bottom: 8px;">
+                        <span style="color: #666;">${p.name}</span>
+                        <span style="font-weight: bold; color: #667eea;">${p.percent}% of net</span>
+                    </div>
+                `).join('');
+            }
+        }
+        function calculate() {
+            const gross = parseFloat(document.getElementById('grossRevenue').value) || 0;
+            const expenses = parseFloat(document.getElementById('expenses').value) || 0;
+            const jacobPercent = parseFloat(document.getElementById('jacobPercent').value) || 0;
+            const jacobCut = gross * (jacobPercent / 100);
+            const netAfterJacob = gross - jacobCut - expenses;
+            document.getElementById('resultGross').textContent = '$' + gross.toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('resultJacob').textContent = '−$' + jacobCut.toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('resultExpenses').textContent = '−$' + expenses.toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('resultNet').textContent = '$' + netAfterJacob.toLocaleString('en-US', {maximumFractionDigits: 0});
+            // Calculate and display all partner shares dynamically
+            const partnerSharesDisplay = document.getElementById('partnerSharesDisplay');
+            partnerSharesDisplay.innerHTML = partners.map(p => {
+                const share = netAfterJacob * (p.percent / 100);
+                return `
+                    <div class="comparison-card">
+                        <h4>${p.name}</h4>
+                        <div class="stat">
+                            <span class="stat-label">${p.percent}% of Net</span>
+                            <span class="stat-value">$${share.toLocaleString('en-US', {maximumFractionDigits: 0})}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        function calculateMix() {
+            const tier1 = parseInt(document.getElementById('tier1Count').value) || 0;
+            const tier2 = parseInt(document.getElementById('tier2Count').value) || 0;
+            const tier3 = parseInt(document.getElementById('tier3Count').value) || 0;
+            const tier1Revenue = 2000;
+            const tier2Revenue = 5500;
+            const tier3Revenue = 30000;
+            const grossMix = (tier1 * tier1Revenue) + (tier2 * tier2Revenue) + (tier3 * tier3Revenue);
+            const jacobCutMix = grossMix * 0.10;
+            const netMix = grossMix - jacobCutMix - 800;
+            const yourShareMix = netMix * 0.50;
+            const hours = (tier1 * 22) + (tier2 * 35) + (tier3 * 60);
+            const hourlyMix = yourShareMix / (hours || 1);
+            document.getElementById('mixGross').textContent = '$' + grossMix.toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('mixYourShare').textContent = '$' + yourShareMix.toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('mixHours').textContent = hours;
+            document.getElementById('mixHourly').textContent = '$' + hourlyMix.toFixed(2) + '/hr';
+        }
+        function adjustPercent(type, delta) {
+            const input = type === 'jacob' ? 'jacobPercent' : 'jacobPercent';
+            const current = parseInt(document.getElementById(input).value) || 0;
+            const newValue = Math.max(0, Math.min(100, current + delta));
+            document.getElementById(input).value = newValue;
+            calculate();
+        }
+        function loadScenario(scenario) {
+            const scenarios = {
+                mvp: { gross: 5500, expenses: 350, jacob: 10 },
+                validation: { gross: 15000, expenses: 800, jacob: 10 },
+                scale: { gross: 23500, expenses: 1500, jacob: 10 }
+            };
+            const s = scenarios[scenario];
+            document.getElementById('grossRevenue').value = s.gross;
+            document.getElementById('expenses').value = s.expenses;
+            document.getElementById('jacobPercent').value = s.jacob;
+            calculate();
+        }
+        function resetCalculator() {
+            document.getElementById('grossRevenue').value = 6000;
+            document.getElementById('expenses').value = 400;
+            document.getElementById('jacobPercent').value = 10;
+            calculate();
+        }
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        function exportPDF() {
+            const element = document.getElementById('calculator');
+            const opt = {
+                margin: 10,
+                filename: `Estate-Liquidation-Breakdown-${new Date().toISOString().split('T')[0]}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+        function saveSnapshot() {
+            const snapshot = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString(),
+                gross: document.getElementById('grossRevenue').value,
+                expenses: document.getElementById('expenses').value,
+                jacobPercent: document.getElementById('jacobPercent').value,
+                partners: JSON.stringify(partners),
+                netRevenue: document.getElementById('resultNet').textContent
+            };
+            snapshots.push(snapshot);
+            localStorage.setItem('estateSnapshots', JSON.stringify(snapshots));
+            renderSnapshots();
+            const msg = document.getElementById('successMsg');
+            msg.textContent = '✅ Snapshot saved!';
+            msg.style.display = 'block';
+            setTimeout(() => msg.style.display = 'none', 3000);
+        }
+        function renderSnapshots() {
+            const list = document.getElementById('snapshotsList');
+            if (snapshots.length === 0) {
+                list.innerHTML = '<p style="color: #999; text-align: center; padding: 30px;">No snapshots yet. Create one to get started!</p>';
+                return;
+            }
+            list.innerHTML = snapshots.map((s, i) => {
+                const snapshotPartners = JSON.parse(s.partners);
+                return `
+                    <div class="comparison-card" style="margin-bottom: 15px;">
+                        <h4>📸 Snapshot ${i + 1} — ${s.date}</h4>
+                        <div class="stat">
+                            <span class="stat-label">Gross Revenue</span>
+                            <span class="stat-value">$${parseInt(s.gross).toLocaleString()}</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Net Revenue</span>
+                            <span class="stat-value">${s.netRevenue}</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Jacob's Cut</span>
+                            <span class="stat-value">${s.jacobPercent}%</span>
+                        </div>
+                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                            <span style="font-size: 0.9em; color: #666; font-weight: 600;">Partners:</span>
+                            ${snapshotPartners.map(p => `<div style="font-size: 0.85em; color: #667eea; margin-top: 4px;">${p.name}: ${p.percent}%</div>`).join('')}
+                        </div>
+                        <button onclick="deleteSnapshot(${s.id})" style="margin-top: 10px; padding: 8px 12px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; width: 100%;">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+        function deleteSnapshot(id) {
+            snapshots = snapshots.filter(s => s.id !== id);
+            localStorage.setItem('estateSnapshots', JSON.stringify(snapshots));
+            renderSnapshots();
+        }
+        function clearSnapshots() {
+            if (confirm('Delete all snapshots? This cannot be undone.')) {
+                snapshots = [];
+                localStorage.setItem('estateSnapshots', JSON.stringify(snapshots));
+                renderSnapshots();
+            }
+        }
+        function exportAllSnapshots() {
+            if (snapshots.length === 0) {
+                alert('No snapshots to export. Create one first!');
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(16);
+            doc.text('Estate Liquidation Financial Snapshots', 10, 10);
+            doc.setFontSize(10);
+            doc.text(`Generated: ${new Date().toLocaleDateString()}`, 10, 20);
+            let yPosition = 30;
+            snapshots.forEach((s, i) => {
+                if (yPosition > 250) {
+                    doc.addPage();
+                    yPosition = 10;
+                }
+                doc.setFontSize(12);
+                doc.text(`Snapshot ${i + 1} — ${s.date}`, 10, yPosition);
+                yPosition += 10;
+                const snapshotPartners = JSON.parse(s.partners);
+                const lines = [
+                    `Gross Revenue: $${parseInt(s.gross).toLocaleString()}`,
+                    `Jacob's Cut: ${s.jacobPercent}%`,
+                    `Net Revenue: ${s.netRevenue}`,
+                    `Partners:`,
+                    ...snapshotPartners.map(p => `  - ${p.name}: ${p.percent}%`)
+                ];
+                doc.setFontSize(10);
+                lines.forEach(line => {
+                    doc.text(line, 15, yPosition);
+                    yPosition += 8;
+                });
+                yPosition += 5;
+            });
+            doc.save(`Estate-Liquidation-Snapshots-${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+        function copyToClipboard() {
+            const gross = document.getElementById('grossRevenue').value;
+            const net = document.getElementById('resultNet').textContent;
+            const partnerInfo = partners.map(p => {
+                const netAmount = (parseFloat(document.getElementById('resultNet').textContent.replace(/\$|,/g, '')) || 0) * (p.percent / 100);
+                return `  - ${p.name}: $${netAmount.toFixed(0)}`;
+            }).join('\n');
+            const text = `Estate Deal Breakdown:\nGross: $${gross}\nNet: ${net}\n\nPartner Splits:\n${partnerInfo}`;
+            navigator.clipboard.writeText(text).then(() => {
+                const msg = document.getElementById('successMsg');
+                msg.textContent = '✅ Copied to clipboard!';
+                msg.style.display = 'block';
+                setTimeout(() => msg.style.display = 'none', 2000);
+            });
+        }
+        // Initialize
+        renderPartners();
+        calculate();
+        calculateMix();
+        renderSnapshots();
+    </script>
+</body>
+</html>
